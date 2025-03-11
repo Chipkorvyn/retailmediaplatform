@@ -1,11 +1,12 @@
 /**
  * File: src/components/dashboard/RetailMediaDashboard.tsx
  * Main dashboard component for the retail media platform
- * Last updated: Vercel deployment fix
+ * Last updated: ESLint fix - removed marketGrowthData variable
  */
 
 "use client"
 
+// Refresh file to clear ESLint cache
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
