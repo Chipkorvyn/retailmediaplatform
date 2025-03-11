@@ -26,7 +26,7 @@ interface TabData {
   sectionData: SectionData[];
 }
 
-export async function GET() {
+export async function GET(): Promise<NextResponse<TabData>> {
   try {
     // Initialize Google Sheets API client
     const auth = new google.auth.GoogleAuth({
@@ -42,7 +42,7 @@ export async function GET() {
 
     if (!spreadsheetId) {
       return NextResponse.json(
-        { error: 'Spreadsheet ID is not configured' },
+        { error: 'Spreadsheet ID is not configured' } as unknown as TabData,
         { status: 500 }
       );
     }
@@ -86,7 +86,7 @@ export async function GET() {
       marketSections.some(section => section.sectionId === data.sectionId)
     );
 
-    const marketTabData = {
+    const marketTabData: TabData = {
       sections: marketSections,
       sectionData: marketSectionData,
     };
@@ -108,7 +108,7 @@ export async function GET() {
         error: 'Failed to fetch data from Google Sheets',
         details: sheetsError.message,
         code: sheetsError.status || 500
-      },
+      } as unknown as TabData,
       { status: sheetsError.status || 500 }
     );
   }
