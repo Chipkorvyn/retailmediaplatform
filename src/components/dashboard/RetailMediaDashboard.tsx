@@ -1,13 +1,11 @@
 "use client"
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, LineChart, PieChart, Pie, Cell, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line } from 'recharts';
 
 const RetailMediaDashboard = () => {
-  const [selectedTab, setSelectedTab] = useState('welcome');
-
   // Mock data for visualizations
   const marketGrowthData = [
     { year: 2019, spend: 12.4, percentage: 1.2 },
