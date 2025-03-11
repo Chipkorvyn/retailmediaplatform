@@ -1,5 +1,6 @@
 import { google } from 'googleapis'
 import { NextResponse } from 'next/server'
+import { GaxiosError } from 'gaxios'
 
 // Cache duration in seconds (5 minutes)
 const CACHE_DURATION = 300
@@ -25,11 +26,6 @@ interface TabData {
   sectionData: SectionData[];
 }
 
-interface GoogleSheetsError {
-  message: string;
-  code?: number;
-}
-
 export async function GET() {
   try {
     // Initialize Google Sheets API client
@@ -51,12 +47,8 @@ export async function GET() {
       );
     }
 
-    // Fetch data from all required sheets
-    const [, sectionsResponse, sectionDataResponse] = await Promise.all([
-      sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: 'Tabs!A2:E',
-      }),
+    // Fetch data from required sheets
+    const [sectionsResponse, sectionDataResponse] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId,
         range: 'Sections!A2:G',
@@ -109,15 +101,15 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching data from Google Sheets:', error);
     
-    const sheetsError = error as GoogleSheetsError;
+    const sheetsError = error as GaxiosError;
     
     return NextResponse.json(
       { 
         error: 'Failed to fetch data from Google Sheets',
         details: sheetsError.message,
-        code: sheetsError.code || 500
+        code: sheetsError.status || 500
       },
-      { status: sheetsError.code || 500 }
+      { status: sheetsError.status || 500 }
     );
   }
 } 
