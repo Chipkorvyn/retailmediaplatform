@@ -21,12 +21,18 @@ interface SectionData {
   value: number;
 }
 
-interface TabData {
+interface SuccessResponse {
   sections: Section[];
   sectionData: SectionData[];
 }
 
-export async function GET(): Promise<NextResponse<TabData>> {
+interface ErrorResponse {
+  error: string;
+  details?: string;
+  code?: number;
+}
+
+export async function GET(): Promise<NextResponse> {
   try {
     // Initialize Google Sheets API client
     const auth = new google.auth.GoogleAuth({
@@ -41,10 +47,10 @@ export async function GET(): Promise<NextResponse<TabData>> {
     const spreadsheetId = process.env.SPREADSHEET_ID;
 
     if (!spreadsheetId) {
-      return NextResponse.json(
-        { error: 'Spreadsheet ID is not configured' } as unknown as TabData,
-        { status: 500 }
-      );
+      const errorResponse: ErrorResponse = {
+        error: 'Spreadsheet ID is not configured'
+      };
+      return NextResponse.json(errorResponse, { status: 500 });
     }
 
     // Fetch data from required sheets
@@ -86,13 +92,13 @@ export async function GET(): Promise<NextResponse<TabData>> {
       marketSections.some(section => section.sectionId === data.sectionId)
     );
 
-    const marketTabData: TabData = {
+    const successResponse: SuccessResponse = {
       sections: marketSections,
       sectionData: marketSectionData,
     };
 
     // Return response with cache headers
-    return new NextResponse(JSON.stringify(marketTabData), {
+    return new NextResponse(JSON.stringify(successResponse), {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': `s-maxage=${CACHE_DURATION}, stale-while-revalidate`,
@@ -102,14 +108,12 @@ export async function GET(): Promise<NextResponse<TabData>> {
     console.error('Error fetching data from Google Sheets:', error);
     
     const sheetsError = error as GaxiosError;
+    const errorResponse: ErrorResponse = {
+      error: 'Failed to fetch data from Google Sheets',
+      details: sheetsError.message,
+      code: sheetsError.status || 500
+    };
     
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch data from Google Sheets',
-        details: sheetsError.message,
-        code: sheetsError.status || 500
-      } as unknown as TabData,
-      { status: sheetsError.status || 500 }
-    );
+    return NextResponse.json(errorResponse, { status: sheetsError.status || 500 });
   }
 } 
