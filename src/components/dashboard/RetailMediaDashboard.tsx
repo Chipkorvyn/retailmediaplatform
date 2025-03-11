@@ -13,16 +13,6 @@ import { BarChart, LineChart, PieChart, Pie, Cell, Bar, XAxis, YAxis, CartesianG
 
 const RetailMediaDashboard = () => {
   // Mock data for visualizations
-  const marketGrowthData = [
-    { year: 2019, spend: 12.4, percentage: 1.2 },
-    { year: 2020, spend: 18.6, percentage: 1.6 },
-    { year: 2021, spend: 27.5, percentage: 1.9 },
-    { year: 2022, spend: 35.8, percentage: 2.3 },
-    { year: 2023, spend: 45.2, percentage: 2.6 },
-    { year: 2024, spend: 54.7, percentage: 2.9 },
-    { year: 2025, spend: 63.1, percentage: 3.2 },
-  ];
-
   const countryRevenueData = [
     { country: 'United States', revenue: 45.2 },
     { country: 'China', revenue: 32.4 },
