@@ -1,9 +1,5 @@
-import RetailMediaDashboard from '@/components/dashboard/RetailMediaDashboard'
+import { redirect } from 'next/navigation'
 
-export default function Home() {
-  return (
-    <main className="min-h-screen p-4 md:p-8">
-      <RetailMediaDashboard />
-    </main>
-  )
+export default function HomePage() {
+  redirect('/dashboard')
 }
