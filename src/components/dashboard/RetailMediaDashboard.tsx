@@ -1,6 +1,7 @@
 /**
  * File: src/components/dashboard/RetailMediaDashboard.tsx
  * Main dashboard component for the retail media platform
+ * Last updated: Vercel deployment fix
  */
 
 "use client"
