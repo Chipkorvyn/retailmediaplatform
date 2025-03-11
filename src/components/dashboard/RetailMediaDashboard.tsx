@@ -1,240 +1,160 @@
 /**
  * File: src/components/dashboard/RetailMediaDashboard.tsx
  * Main dashboard component for the retail media platform
- * Last updated: ESLint fix - removed marketGrowthData variable
+ * Last updated: Added Google Sheets integration for Country Potential tab
  */
 
 "use client"
 
-// Refresh file to clear ESLint cache
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, LineChart, PieChart, Pie, Cell, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line } from 'recharts';
+import { Loader2 } from 'lucide-react';
+
+// Types for the API response
+interface MarketSection {
+  tabName: string;
+  sectionName: string;
+  sectionId: string;
+  chartType: string;
+  description: string;
+  sortOrder: number;
+}
+
+interface MarketTabData {
+  sections: MarketSection[];
+  sectionData: {
+    sectionId: string;
+    label: string;
+    value: number;
+  }[];
+}
+
+interface ChartDataPoint {
+  name: string;
+  value: number;
+}
+
+// Mock data for other tabs
+const retailerPerformanceData = [
+  { name: 'Amazon', rmPercent: 4.2 },
+  { name: 'Walmart', rmPercent: 2.8 },
+  { name: 'Target', rmPercent: 1.9 },
+  { name: 'Kroger', rmPercent: 1.5 },
+  { name: 'Best Buy', rmPercent: 1.2 },
+];
+
+const categorySpendData = [
+  { name: 'CPG', percent: 35 },
+  { name: 'Electronics', percent: 22 },
+  { name: 'Apparel', percent: 15 },
+  { name: 'Beauty', percent: 18 },
+  { name: 'Other', percent: 10 },
+];
+
+const channelSplitData = [
+  { name: 'On-Site Search', value: 42 },
+  { name: 'Display Ads', value: 28 },
+  { name: 'In-Store Digital', value: 18 },
+  { name: 'Off-Site', value: 12 },
+];
+
+const channelGrowthData = [
+  { year: '2019', onsite: 12, offsite: 4, instore: 2 },
+  { year: '2020', onsite: 18, offsite: 6, instore: 3 },
+  { year: '2021', onsite: 25, offsite: 9, instore: 5 },
+  { year: '2022', onsite: 35, offsite: 14, instore: 8 },
+  { year: '2023', onsite: 42, offsite: 18, instore: 12 },
+];
+
+const retailerComparisonData = [
+  { name: 'Walmart', totalSales: 572.0, rmRevenue: 16.0, rmPercent: 2.8, rmProfit: 13.2 },
+  { name: 'Target', totalSales: 108.7, rmRevenue: 2.1, rmPercent: 1.9, rmProfit: 1.7 },
+  { name: 'Kroger', totalSales: 148.3, rmRevenue: 2.2, rmPercent: 1.5, rmProfit: 1.8 },
+  { name: 'Amazon', totalSales: 386.1, rmRevenue: 16.2, rmPercent: 4.2, rmProfit: 13.6 },
+];
 
 const RetailMediaDashboard = () => {
-  // Mock data for visualizations
-  const countryRevenueData = [
-    { country: 'United States', revenue: 45.2 },
-    { country: 'China', revenue: 32.4 },
-    { country: 'United Kingdom', revenue: 8.6 },
-    { country: 'Germany', revenue: 7.2 },
-    { country: 'France', revenue: 5.8 },
-    { country: 'Japan', revenue: 4.9 },
-    { country: 'Australia', revenue: 3.2 },
-    { country: 'South Korea', revenue: 2.8 }
-  ];
+  const [selectedChart, setSelectedChart] = React.useState('revenue');
 
-  const countryGrowthData = [
-    { country: 'United States', growth: 28 },
-    { country: 'China', growth: 42 },
-    { country: 'United Kingdom', growth: 32 },
-    { country: 'Germany', growth: 30 },
-    { country: 'France', growth: 29 },
-    { country: 'Japan', growth: 25 },
-    { country: 'Australia', growth: 35 },
-    { country: 'South Korea', growth: 38 }
-  ];
+  // Fetch data from the API
+  const { data: marketData, isLoading, error } = useQuery<MarketTabData>({
+    queryKey: ['marketData'],
+    queryFn: async () => {
+      const response = await fetch('/api/sheets');
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error || 'Failed to fetch market data');
+      }
+      const data = await response.json();
+      console.log('Fetched market data:', data);
+      return data;
+    },
+  });
 
-  const countryRetailShareData = [
-    { country: 'United States', share: 3.2 },
-    { country: 'China', share: 2.8 },
-    { country: 'United Kingdom', share: 2.4 },
-    { country: 'Germany', share: 2.1 },
-    { country: 'France', share: 1.9 },
-    { country: 'Japan', share: 1.8 },
-    { country: 'Australia', share: 1.6 },
-    { country: 'South Korea', share: 1.5 }
-  ];
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
-  const countryAdShareData = [
-    { country: 'United States', share: 12.5 },
-    { country: 'China', share: 10.8 },
-    { country: 'United Kingdom', share: 9.6 },
-    { country: 'Germany', share: 8.4 },
-    { country: 'France', share: 7.8 },
-    { country: 'Japan', share: 7.2 },
-    { country: 'Australia', share: 6.8 },
-    { country: 'South Korea', share: 6.4 }
-  ];
+  // Error state
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-2">Error loading data: {(error as Error).message}</p>
+          <p className="text-sm text-gray-600">Please check the browser console for more details.</p>
+        </div>
+      </div>
+    );
+  }
 
-  const retailerPerformanceData = [
-    { name: 'Amazon', rmPercent: 4.2, absoluteRevenue: 45, profit: 38 },
-    { name: 'Walmart', rmPercent: 2.8, absoluteRevenue: 32, profit: 26 },
-    { name: 'Target', rmPercent: 2.1, absoluteRevenue: 18, profit: 14 },
-    { name: 'Kroger', rmPercent: 1.9, absoluteRevenue: 12, profit: 9 },
-    { name: 'CVS', rmPercent: 1.7, absoluteRevenue: 8, profit: 6 },
-    { name: 'Home Depot', rmPercent: 1.4, absoluteRevenue: 7, profit: 5 },
-  ];
+  // Early return if data is not available
+  if (!marketData) {
+    console.log('No market data available');
+    return null;
+  }
 
-  const categorySpendData = [
-    { name: 'CPG', percent: 35, growth: 32 },
-    { name: 'Electronics', percent: 22, growth: 28 },
-    { name: 'Apparel', percent: 15, growth: 18 },
-    { name: 'Beauty', percent: 10, growth: 22 },
-    { name: 'Home Goods', percent: 8, growth: 15 },
-    { name: 'Toys', percent: 6, growth: 10 },
-    { name: 'Other', percent: 4, growth: 8 },
-  ];
+  console.log('Rendering with market data:', marketData);
 
-  const channelSplitData = [
-    { name: 'On-Site Search', value: 42 },
-    { name: 'On-Site Display', value: 28 },
-    { name: 'Off-Site Media', value: 18 },
-    { name: 'In-Store Digital', value: 12 },
-  ];
+  const getChartData = (sectionId: string): ChartDataPoint[] => {
+    if (!marketData) return [];
+    const filteredData = marketData.sectionData
+      .filter((data) => data.sectionId === sectionId)
+      .map((data) => ({
+        name: data.label,
+        value: data.value,
+      }));
+    console.log(`Chart data for section ${sectionId}:`, filteredData);
+    return filteredData;
+  };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
-  const channelGrowthData = [
-    { year: 2019, onsite: 8.1, offsite: 2.5, instore: 1.8 },
-    { year: 2020, onsite: 12.2, offsite: 3.8, instore: 2.6 },
-    { year: 2021, onsite: 18.5, offsite: 5.7, instore: 3.3 },
-    { year: 2022, onsite: 23.6, offsite: 7.4, instore: 4.8 },
-    { year: 2023, onsite: 29.8, offsite: 9.2, instore: 6.2 },
-  ];
-
-  const retailerComparisonData = [
-    { 
-      name: 'Walmart', 
-      totalSales: 572, 
-      rmRevenue: 16.0, 
-      rmPercent: 2.8, 
-      rmProfit: 13.2,
-      onSite: 62,
-      offSite: 22,
-      inStore: 16
-    },
-    { 
-      name: 'Target', 
-      totalSales: 106, 
-      rmRevenue: 2.2, 
-      rmPercent: 2.1, 
-      rmProfit: 1.7,
-      onSite: 58,
-      offSite: 27,
-      inStore: 15
-    },
-    { 
-      name: 'Kroger', 
-      totalSales: 148, 
-      rmRevenue: 2.8, 
-      rmPercent: 1.9, 
-      rmProfit: 2.1,
-      onSite: 55,
-      offSite: 20,
-      inStore: 25
-    }
-  ];
-
-  const [selectedChart, setSelectedChart] = React.useState('revenue');
-  
-  type CountryMetrics = {
-    spend: number;
-    growth: number;
-    retailShare: number;
-    adShare: number;
-  };
-
-  const COUNTRIES = [
-    'United States',
-    'Australia',
-    'Germany',
-    'Switzerland',
-    'United Kingdom',
-    'France',
-    'Italy',
-    'Netherlands',
-    'Belgium',
-    'Poland',
-    'Austria',
-    'Japan',
-    'China',
-    'South Korea'
-  ] as const;
-
-  type Country = typeof COUNTRIES[number];
-
-  const [selectedCountry, setSelectedCountry] = React.useState<Country>('United States');
-
-  const countryMetrics: Record<Country, CountryMetrics> = {
-    'United States': { spend: 45.2, growth: 38.2, retailShare: 2.6, adShare: 10.8 },
-    'Australia': { spend: 3.2, growth: 35.0, retailShare: 1.6, adShare: 6.8 },
-    'Germany': { spend: 7.2, growth: 30.0, retailShare: 2.1, adShare: 8.4 },
-    'Switzerland': { spend: 2.1, growth: 28.5, retailShare: 1.8, adShare: 7.2 },
-    'United Kingdom': { spend: 8.6, growth: 32.0, retailShare: 2.4, adShare: 9.6 },
-    'France': { spend: 5.8, growth: 29.0, retailShare: 1.9, adShare: 7.8 },
-    'Italy': { spend: 3.8, growth: 27.5, retailShare: 1.7, adShare: 6.9 },
-    'Netherlands': { spend: 2.4, growth: 26.8, retailShare: 1.5, adShare: 6.5 },
-    'Belgium': { spend: 1.8, growth: 25.5, retailShare: 1.4, adShare: 6.2 },
-    'Poland': { spend: 1.5, growth: 31.5, retailShare: 1.3, adShare: 5.8 },
-    'Austria': { spend: 1.2, growth: 24.8, retailShare: 1.2, adShare: 5.5 },
-    'Japan': { spend: 4.9, growth: 25.0, retailShare: 1.8, adShare: 7.2 },
-    'China': { spend: 32.4, growth: 42.0, retailShare: 2.8, adShare: 10.8 },
-    'South Korea': { spend: 2.8, growth: 38.0, retailShare: 1.5, adShare: 6.4 }
-  };
-
-  const getChartData = () => {
-    switch (selectedChart) {
-      case 'revenue':
-        return {
-          data: countryRevenueData,
-          dataKey: 'revenue',
-          title: 'Overall Country Level RM Revenue',
-          description: 'Total RM 2025 (E) ad spend by country',
-          yAxisLabel: 'Revenue (USD Billions)',
-          analysis: 'The United States leads in retail media revenue, followed by China and key European markets. Emerging markets show significant growth potential.'
-        };
-      case 'growth':
-        return {
-          data: countryGrowthData,
-          dataKey: 'growth',
-          title: 'RM Trajectory Growth by Country',
-          description: 'RM 2025-2028 growth rate by country',
-          yAxisLabel: 'Growth Rate (%)',
-          analysis: 'China leads growth projections at 42%, followed by South Korea and Australia, indicating strong momentum in Asian markets.'
-        };
-      case 'retail':
-        return {
-          data: countryRetailShareData,
-          dataKey: 'share',
-          title: 'Relative Size of RM vs Retail Sales',
-          description: 'Total RM ad spend % of Total Retail sales (2025E)',
-          yAxisLabel: '% of Retail Sales',
-          analysis: 'The US market shows highest RM penetration at 3.2% of retail sales, with other markets showing significant room for growth.'
-        };
-      case 'ad':
-        return {
-          data: countryAdShareData,
-          dataKey: 'share',
-          title: 'Relative Size of RM vs Total Ad Spend',
-          description: 'Total RM ad spend % of Total Advertising spend (2025E)',
-          yAxisLabel: '% of Total Ad Spend',
-          analysis: 'Retail Media represents a significant portion of total ad spend, particularly in the US (12.5%) and China (10.8%).'
-        };
-      default:
-        return {
-          data: countryRevenueData,
-          dataKey: 'revenue',
-          title: 'Overall Country Level RM Revenue',
-          description: 'Total RM 2025 (E) ad spend by country',
-          yAxisLabel: 'Revenue (USD Billions)',
-          analysis: 'The United States leads in retail media revenue, followed by China and key European markets. Emerging markets show significant growth potential.'
-        };
-    }
-  };
-
   return (
-    <div className="max-w-[1200px] mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6 text-center">Retail Media Intelligence Dashboard</h1>
-      <Tabs defaultValue="welcome" className="w-full">
-        <TabsList className="w-full flex justify-between space-x-1 rounded-lg bg-muted p-1 mb-8">
-          <TabsTrigger value="welcome" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Welcome</TabsTrigger>
-          <TabsTrigger value="market" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Country Potential</TabsTrigger>
-          <TabsTrigger value="best-in-class" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Best in Class</TabsTrigger>
-          <TabsTrigger value="advertisers" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Advertiser Categories</TabsTrigger>
-          <TabsTrigger value="channels" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Channel Breakdown</TabsTrigger>
-          <TabsTrigger value="retailers" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Retailer Deep Dives</TabsTrigger>
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+      </div>
+      <Tabs defaultValue="country-potential" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="welcome">Welcome</TabsTrigger>
+          <TabsTrigger value="country-potential">Country Potential</TabsTrigger>
+          <TabsTrigger value="best-in-class">Best in Class</TabsTrigger>
+          <TabsTrigger value="advertiser-categories">
+            Advertiser Categories
+          </TabsTrigger>
+          <TabsTrigger value="channel-breakdown">Channel Breakdown</TabsTrigger>
+          <TabsTrigger value="retailer-deep-dives">
+            Retailer Deep Dives
+          </TabsTrigger>
         </TabsList>
 
         {/* Welcome Page */}
@@ -296,120 +216,68 @@ const RetailMediaDashboard = () => {
         </TabsContent>
 
         {/* Market Potential Page */}
-        <TabsContent value="market">
-          <div className="grid grid-cols-1 gap-6">
-            <Card className="bg-white">
+        <TabsContent value="country-potential" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
+            <Card>
               <CardHeader>
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => setSelectedChart('revenue')}
-                      className={`px-4 py-2 rounded-lg transition-colors ${
-                        selectedChart === 'revenue' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
-                      }`}
-                    >
-                      Overall Country Level RM Revenue
-                    </button>
-                    <button
-                      onClick={() => setSelectedChart('growth')}
-                      className={`px-4 py-2 rounded-lg transition-colors ${
-                        selectedChart === 'growth' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
-                      }`}
-                    >
-                      RM Trajectory Growth by Country
-                    </button>
-                    <button
-                      onClick={() => setSelectedChart('retail')}
-                      className={`px-4 py-2 rounded-lg transition-colors ${
-                        selectedChart === 'retail' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
-                      }`}
-                    >
-                      RM vs Retail Sales
-                    </button>
-                    <button
-                      onClick={() => setSelectedChart('ad')}
-                      className={`px-4 py-2 rounded-lg transition-colors ${
-                        selectedChart === 'ad' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
-                      }`}
-                    >
-                      RM vs Ad Spend
-                    </button>
-                  </div>
-                  <div>
-                    <CardTitle>{getChartData().title}</CardTitle>
-                    <CardDescription>{getChartData().description}</CardDescription>
-                  </div>
-                </div>
+                <CardTitle>Country Potential Analysis</CardTitle>
+                <CardDescription>Select a metric to view different aspects of retail media potential by country</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    data={getChartData().data}
-                    margin={{ top: 10, right: 30, left: 20, bottom: 20 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="country" angle={-45} textAnchor="end" height={60} />
-                    <YAxis label={{ value: getChartData().yAxisLabel, angle: -90, position: 'insideLeft' }} />
-                    <Tooltip />
-                    <Bar dataKey={getChartData().dataKey} fill="#8884d8" name={getChartData().yAxisLabel}>
-                      {getChartData().data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
-                  <p><span className="font-semibold">Analysis:</span> {getChartData().analysis}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="lg:col-span-3 bg-white">
-              <CardHeader>
-                <CardTitle>Country Level Retail Media Market</CardTitle>
-                <CardDescription>Key Performance Metrics by Country</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-6">
-                  <label htmlFor="country-select" className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Country
-                  </label>
-                  <select
-                    id="country-select"
-                    value={selectedCountry}
-                    onChange={(e) => setSelectedCountry(e.target.value as Country)}
-                    className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {COUNTRIES.map((country) => (
-                      <option key={country} value={country}>
-                        {country}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {marketData.sections.map((section) => (
+                    <button
+                      key={section.sectionId}
+                      onClick={() => setSelectedChart(section.sectionId)}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        selectedChart === section.sectionId
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 hover:bg-gray-300'
+                      }`}
+                    >
+                      {section.sectionName}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Card className="bg-blue-50 p-4 text-center">
-                    <p className="text-sm text-gray-500">Total RM Ad Spend</p>
-                    <p className="text-2xl font-bold">${countryMetrics[selectedCountry].spend}B</p>
-                    <p className="text-xs text-gray-500">2023</p>
-                  </Card>
-                  <Card className="bg-green-50 p-4 text-center">
-                    <p className="text-sm text-gray-500">Growth Rate</p>
-                    <p className="text-2xl font-bold">{countryMetrics[selectedCountry].growth}%</p>
-                    <p className="text-xs text-gray-500">3-year CAGR</p>
-                  </Card>
-                  <Card className="bg-purple-50 p-4 text-center">
-                    <p className="text-sm text-gray-500">% of Retail Sales</p>
-                    <p className="text-2xl font-bold">{countryMetrics[selectedCountry].retailShare}%</p>
-                    <p className="text-xs text-gray-500">2023</p>
-                  </Card>
-                  <Card className="bg-yellow-50 p-4 text-center">
-                    <p className="text-sm text-gray-500">% of Total Ad Spend</p>
-                    <p className="text-2xl font-bold">{countryMetrics[selectedCountry].adShare}%</p>
-                    <p className="text-xs text-gray-500">2023</p>
-                  </Card>
-                </div>
+                {marketData.sections.map((section) => (
+                  selectedChart === section.sectionId && (
+                    <div key={section.sectionId}>
+                      <div className="mb-4">
+                        <p className="text-sm text-muted-foreground">
+                          {section.description}
+                        </p>
+                      </div>
+                      <ResponsiveContainer width="100%" height={350}>
+                        <BarChart
+                          data={getChartData(section.sectionId)}
+                          margin={{
+                            top: 5,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                          }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="name"
+                            angle={-45}
+                            textAnchor="end"
+                            height={70}
+                          />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar
+                            dataKey="value"
+                            fill="#8884d8"
+                            name="Value"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )
+                ))}
               </CardContent>
             </Card>
           </div>
@@ -492,7 +360,7 @@ const RetailMediaDashboard = () => {
         </TabsContent>
 
         {/* Advertiser Categories Page */}
-        <TabsContent value="advertisers">
+        <TabsContent value="advertiser-categories">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-white">
               <CardHeader>
@@ -596,7 +464,7 @@ const RetailMediaDashboard = () => {
         </TabsContent>
 
         {/* Channel Breakdown Page */}
-        <TabsContent value="channels">
+        <TabsContent value="channel-breakdown">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="bg-white">
               <CardHeader>
@@ -678,7 +546,7 @@ const RetailMediaDashboard = () => {
         </TabsContent>
 
         {/* Retailer Deep Dives Page */}
-        <TabsContent value="retailers">
+        <TabsContent value="retailer-deep-dives">
           <div className="grid grid-cols-1 gap-6">
             <Card className="bg-white">
               <CardHeader>
