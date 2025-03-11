@@ -25,8 +25,8 @@ interface TabData {
   sectionData: SectionData[];
 }
 
-// Custom error type for better error handling
-interface GoogleSheetsError extends Error {
+interface GoogleSheetsError {
+  message: string;
   code?: number;
 }
 
@@ -111,7 +111,6 @@ export async function GET() {
     
     const sheetsError = error as GoogleSheetsError;
     
-    // Return more detailed error message
     return NextResponse.json(
       { 
         error: 'Failed to fetch data from Google Sheets',
