@@ -1,3 +1,8 @@
+/**
+ * File: src/app/layout.tsx
+ * Root layout component that wraps all pages
+ */
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";

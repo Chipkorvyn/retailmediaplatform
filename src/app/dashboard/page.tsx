@@ -1,3 +1,8 @@
+/**
+ * File: src/app/dashboard/page.tsx
+ * Dashboard page component
+ */
+
 import RetailMediaDashboard from '@/components/dashboard/RetailMediaDashboard'
 
 export default function DashboardPage() {

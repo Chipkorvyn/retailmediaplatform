@@ -1,3 +1,8 @@
+/**
+ * File: src/components/ui/tabs.tsx
+ * Reusable tabs component for UI navigation
+ */
+
 "use client"
 
 import * as React from "react"

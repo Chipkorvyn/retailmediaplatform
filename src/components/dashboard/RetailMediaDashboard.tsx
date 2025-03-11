@@ -1,3 +1,8 @@
+/**
+ * File: src/components/dashboard/RetailMediaDashboard.tsx
+ * Main dashboard component for the retail media platform
+ */
+
 "use client"
 
 import React from 'react';
