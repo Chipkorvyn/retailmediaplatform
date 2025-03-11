@@ -22,6 +22,50 @@ const RetailMediaDashboard = () => {
     { year: 2025, spend: 63.1, percentage: 3.2 },
   ];
 
+  const countryRevenueData = [
+    { country: 'United States', revenue: 45.2 },
+    { country: 'China', revenue: 32.4 },
+    { country: 'United Kingdom', revenue: 8.6 },
+    { country: 'Germany', revenue: 7.2 },
+    { country: 'France', revenue: 5.8 },
+    { country: 'Japan', revenue: 4.9 },
+    { country: 'Australia', revenue: 3.2 },
+    { country: 'South Korea', revenue: 2.8 }
+  ];
+
+  const countryGrowthData = [
+    { country: 'United States', growth: 28 },
+    { country: 'China', growth: 42 },
+    { country: 'United Kingdom', growth: 32 },
+    { country: 'Germany', growth: 30 },
+    { country: 'France', growth: 29 },
+    { country: 'Japan', growth: 25 },
+    { country: 'Australia', growth: 35 },
+    { country: 'South Korea', growth: 38 }
+  ];
+
+  const countryRetailShareData = [
+    { country: 'United States', share: 3.2 },
+    { country: 'China', share: 2.8 },
+    { country: 'United Kingdom', share: 2.4 },
+    { country: 'Germany', share: 2.1 },
+    { country: 'France', share: 1.9 },
+    { country: 'Japan', share: 1.8 },
+    { country: 'Australia', share: 1.6 },
+    { country: 'South Korea', share: 1.5 }
+  ];
+
+  const countryAdShareData = [
+    { country: 'United States', share: 12.5 },
+    { country: 'China', share: 10.8 },
+    { country: 'United Kingdom', share: 9.6 },
+    { country: 'Germany', share: 8.4 },
+    { country: 'France', share: 7.8 },
+    { country: 'Japan', share: 7.2 },
+    { country: 'Australia', share: 6.8 },
+    { country: 'South Korea', share: 6.4 }
+  ];
+
   const retailerPerformanceData = [
     { name: 'Amazon', rmPercent: 4.2, absoluteRevenue: 45, profit: 38 },
     { name: 'Walmart', rmPercent: 2.8, absoluteRevenue: 32, profit: 26 },
@@ -91,13 +135,111 @@ const RetailMediaDashboard = () => {
     }
   ];
 
+  const [selectedChart, setSelectedChart] = React.useState('revenue');
+  
+  type CountryMetrics = {
+    spend: number;
+    growth: number;
+    retailShare: number;
+    adShare: number;
+  };
+
+  const COUNTRIES = [
+    'United States',
+    'Australia',
+    'Germany',
+    'Switzerland',
+    'United Kingdom',
+    'France',
+    'Italy',
+    'Netherlands',
+    'Belgium',
+    'Poland',
+    'Austria',
+    'Japan',
+    'China',
+    'South Korea'
+  ] as const;
+
+  type Country = typeof COUNTRIES[number];
+
+  const [selectedCountry, setSelectedCountry] = React.useState<Country>('United States');
+
+  const countryMetrics: Record<Country, CountryMetrics> = {
+    'United States': { spend: 45.2, growth: 38.2, retailShare: 2.6, adShare: 10.8 },
+    'Australia': { spend: 3.2, growth: 35.0, retailShare: 1.6, adShare: 6.8 },
+    'Germany': { spend: 7.2, growth: 30.0, retailShare: 2.1, adShare: 8.4 },
+    'Switzerland': { spend: 2.1, growth: 28.5, retailShare: 1.8, adShare: 7.2 },
+    'United Kingdom': { spend: 8.6, growth: 32.0, retailShare: 2.4, adShare: 9.6 },
+    'France': { spend: 5.8, growth: 29.0, retailShare: 1.9, adShare: 7.8 },
+    'Italy': { spend: 3.8, growth: 27.5, retailShare: 1.7, adShare: 6.9 },
+    'Netherlands': { spend: 2.4, growth: 26.8, retailShare: 1.5, adShare: 6.5 },
+    'Belgium': { spend: 1.8, growth: 25.5, retailShare: 1.4, adShare: 6.2 },
+    'Poland': { spend: 1.5, growth: 31.5, retailShare: 1.3, adShare: 5.8 },
+    'Austria': { spend: 1.2, growth: 24.8, retailShare: 1.2, adShare: 5.5 },
+    'Japan': { spend: 4.9, growth: 25.0, retailShare: 1.8, adShare: 7.2 },
+    'China': { spend: 32.4, growth: 42.0, retailShare: 2.8, adShare: 10.8 },
+    'South Korea': { spend: 2.8, growth: 38.0, retailShare: 1.5, adShare: 6.4 }
+  };
+
+  const getChartData = () => {
+    switch (selectedChart) {
+      case 'revenue':
+        return {
+          data: countryRevenueData,
+          dataKey: 'revenue',
+          title: 'Overall Country Level RM Revenue',
+          description: 'Total RM 2025 (E) ad spend by country',
+          yAxisLabel: 'Revenue (USD Billions)',
+          analysis: 'The United States leads in retail media revenue, followed by China and key European markets. Emerging markets show significant growth potential.'
+        };
+      case 'growth':
+        return {
+          data: countryGrowthData,
+          dataKey: 'growth',
+          title: 'RM Trajectory Growth by Country',
+          description: 'RM 2025-2028 growth rate by country',
+          yAxisLabel: 'Growth Rate (%)',
+          analysis: 'China leads growth projections at 42%, followed by South Korea and Australia, indicating strong momentum in Asian markets.'
+        };
+      case 'retail':
+        return {
+          data: countryRetailShareData,
+          dataKey: 'share',
+          title: 'Relative Size of RM vs Retail Sales',
+          description: 'Total RM ad spend % of Total Retail sales (2025E)',
+          yAxisLabel: '% of Retail Sales',
+          analysis: 'The US market shows highest RM penetration at 3.2% of retail sales, with other markets showing significant room for growth.'
+        };
+      case 'ad':
+        return {
+          data: countryAdShareData,
+          dataKey: 'share',
+          title: 'Relative Size of RM vs Total Ad Spend',
+          description: 'Total RM ad spend % of Total Advertising spend (2025E)',
+          yAxisLabel: '% of Total Ad Spend',
+          analysis: 'Retail Media represents a significant portion of total ad spend, particularly in the US (12.5%) and China (10.8%).'
+        };
+      default:
+        return {
+          data: countryRevenueData,
+          dataKey: 'revenue',
+          title: 'Overall Country Level RM Revenue',
+          description: 'Total RM 2025 (E) ad spend by country',
+          yAxisLabel: 'Revenue (USD Billions)',
+          analysis: 'The United States leads in retail media revenue, followed by China and key European markets. Emerging markets show significant growth potential.'
+        };
+    }
+  };
+
   return (
     <div className="max-w-[1200px] mx-auto p-8">
       <h1 className="text-3xl font-bold mb-6 text-center">Retail Media Intelligence Dashboard</h1>
       <Tabs defaultValue="welcome" className="w-full">
         <TabsList className="w-full flex justify-between space-x-1 rounded-lg bg-muted p-1 mb-8">
           <TabsTrigger value="welcome" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Welcome</TabsTrigger>
-          <TabsTrigger value="market" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Market Potential</TabsTrigger>
+          <TabsTrigger value="market" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Country Potential</TabsTrigger>
+          <TabsTrigger value="best-in-class" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Best in Class</TabsTrigger>
           <TabsTrigger value="advertisers" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Advertiser Categories</TabsTrigger>
           <TabsTrigger value="channels" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Channel Breakdown</TabsTrigger>
           <TabsTrigger value="retailers" className="rounded-md px-3 py-1.5 text-sm font-medium transition-all">Retailer Deep Dives</TabsTrigger>
@@ -107,7 +249,7 @@ const RetailMediaDashboard = () => {
         <TabsContent value="welcome">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Retail Media 2023-2025: Market Overview & Retailer Benchmarks</CardTitle>
+              <CardTitle className="text-2xl">Retail Media 2025: Market Overview & Retailer Benchmarks</CardTitle>
               <CardDescription className="text-muted-foreground">US Focus | Comprehensive Market Analysis</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -163,60 +305,127 @@ const RetailMediaDashboard = () => {
 
         {/* Market Potential Page */}
         <TabsContent value="market">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Market Overview */}
-            <Card className="lg:col-span-2 bg-white">
+          <div className="grid grid-cols-1 gap-6">
+            <Card className="bg-white">
               <CardHeader>
-                <CardTitle>Overall Retail Media Market Potential</CardTitle>
-                <CardDescription>Total & Relative Size + Growth</CardDescription>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setSelectedChart('revenue')}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        selectedChart === 'revenue' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+                      }`}
+                    >
+                      Overall Country Level RM Revenue
+                    </button>
+                    <button
+                      onClick={() => setSelectedChart('growth')}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        selectedChart === 'growth' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+                      }`}
+                    >
+                      RM Trajectory Growth by Country
+                    </button>
+                    <button
+                      onClick={() => setSelectedChart('retail')}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        selectedChart === 'retail' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+                      }`}
+                    >
+                      RM vs Retail Sales
+                    </button>
+                    <button
+                      onClick={() => setSelectedChart('ad')}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        selectedChart === 'ad' ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+                      }`}
+                    >
+                      RM vs Ad Spend
+                    </button>
+                  </div>
+                  <div>
+                    <CardTitle>{getChartData().title}</CardTitle>
+                    <CardDescription>{getChartData().description}</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                  <Card className="bg-blue-50 p-4 text-center">
-                    <p className="text-sm text-gray-500">Total RM Ad Spend</p>
-                    <p className="text-2xl font-bold">$45.2B</p>
-                    <p className="text-xs text-gray-500">2023</p>
-                  </Card>
-                  <Card className="bg-green-50 p-4 text-center">
-                    <p className="text-sm text-gray-500">Growth Rate</p>
-                    <p className="text-2xl font-bold">38.2%</p>
-                    <p className="text-xs text-gray-500">3-year CAGR</p>
-                  </Card>
-                  <Card className="bg-purple-50 p-4 text-center">
-                    <p className="text-sm text-gray-500">% of Retail Sales</p>
-                    <p className="text-2xl font-bold">2.6%</p>
-                    <p className="text-xs text-gray-500">2023</p>
-                  </Card>
-                  <Card className="bg-yellow-50 p-4 text-center">
-                    <p className="text-sm text-gray-500">% of Total Ad Spend</p>
-                    <p className="text-2xl font-bold">10.8%</p>
-                    <p className="text-xs text-gray-500">2023</p>
-                  </Card>
-                </div>
-                
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart
-                    data={marketGrowthData}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+                  <BarChart
+                    data={getChartData().data}
+                    margin={{ top: 10, right: 30, left: 20, bottom: 20 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis yAxisId="left" orientation="left" />
-                    <YAxis yAxisId="right" orientation="right" />
+                    <XAxis dataKey="country" angle={-45} textAnchor="end" height={60} />
+                    <YAxis label={{ value: getChartData().yAxisLabel, angle: -90, position: 'insideLeft' }} />
                     <Tooltip />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="spend" name="RM Ad Spend (USD bn)" stroke="#8884d8" activeDot={{ r: 8 }} />
-                    <Line yAxisId="right" type="monotone" dataKey="percentage" name="% of Total Retail Sales" stroke="#82ca9d" />
-                  </LineChart>
+                    <Bar dataKey={getChartData().dataKey} fill="#8884d8" name={getChartData().yAxisLabel}>
+                      {getChartData().data.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
-                
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
-                  <p><span className="font-semibold">Analysis:</span> Retail Media has grown at a 38.2% CAGR over the last 3 years, capturing 10.8% of total ad spend in retail. Growth is projected to continue through 2025, reaching $63.1B.</p>
+                  <p><span className="font-semibold">Analysis:</span> {getChartData().analysis}</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Retailer Performance */}
+            <Card className="lg:col-span-3 bg-white">
+              <CardHeader>
+                <CardTitle>Country Level Retail Media Market</CardTitle>
+                <CardDescription>Key Performance Metrics by Country</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-6">
+                  <label htmlFor="country-select" className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Country
+                  </label>
+                  <select
+                    id="country-select"
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value as Country)}
+                    className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {COUNTRIES.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="bg-blue-50 p-4 text-center">
+                    <p className="text-sm text-gray-500">Total RM Ad Spend</p>
+                    <p className="text-2xl font-bold">${countryMetrics[selectedCountry].spend}B</p>
+                    <p className="text-xs text-gray-500">2023</p>
+                  </Card>
+                  <Card className="bg-green-50 p-4 text-center">
+                    <p className="text-sm text-gray-500">Growth Rate</p>
+                    <p className="text-2xl font-bold">{countryMetrics[selectedCountry].growth}%</p>
+                    <p className="text-xs text-gray-500">3-year CAGR</p>
+                  </Card>
+                  <Card className="bg-purple-50 p-4 text-center">
+                    <p className="text-sm text-gray-500">% of Retail Sales</p>
+                    <p className="text-2xl font-bold">{countryMetrics[selectedCountry].retailShare}%</p>
+                    <p className="text-xs text-gray-500">2023</p>
+                  </Card>
+                  <Card className="bg-yellow-50 p-4 text-center">
+                    <p className="text-sm text-gray-500">% of Total Ad Spend</p>
+                    <p className="text-2xl font-bold">{countryMetrics[selectedCountry].adShare}%</p>
+                    <p className="text-xs text-gray-500">2023</p>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Best in Class Retailer Performance */}
+        <TabsContent value="best-in-class">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="bg-white">
               <CardHeader>
                 <CardTitle>Best-in-Class Retailer Performance</CardTitle>
@@ -239,6 +448,51 @@ const RetailMediaDashboard = () => {
                 
                 <div className="mt-6 p-3 bg-blue-50 rounded-lg text-sm">
                   <p><span className="font-semibold">Best Performer:</span> Amazon leads with 4.2% of retail sales coming from media, generating 84% profit margins on their retail media business.</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white">
+              <CardHeader>
+                <CardTitle>Revenue & Profitability Analysis</CardTitle>
+                <CardDescription>Key Performance Metrics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <Card className="bg-blue-50 p-4">
+                    <h3 className="text-sm font-semibold mb-2">Top Performer</h3>
+                    <p className="text-2xl font-bold">Amazon</p>
+                    <p className="text-sm text-gray-600">4.2% RM/Sales Ratio</p>
+                    <p className="text-sm text-gray-600">84% Profit Margin</p>
+                  </Card>
+                  <Card className="bg-green-50 p-4">
+                    <h3 className="text-sm font-semibold mb-2">Fast Riser</h3>
+                    <p className="text-2xl font-bold">Walmart</p>
+                    <p className="text-sm text-gray-600">2.8% RM/Sales Ratio</p>
+                    <p className="text-sm text-gray-600">78% Profit Margin</p>
+                  </Card>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h3 className="font-semibold mb-2">Success Factors</h3>
+                    <ul className="list-disc pl-5 space-y-2 text-sm">
+                      <li>Strong first-party data capabilities</li>
+                      <li>Advanced targeting and measurement</li>
+                      <li>Integrated omnichannel approach</li>
+                      <li>Robust self-service platforms</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="p-4 bg-yellow-50 rounded-lg">
+                    <h3 className="font-semibold mb-2">Growth Opportunities</h3>
+                    <ul className="list-disc pl-5 space-y-2 text-sm">
+                      <li>Expansion into off-site media</li>
+                      <li>Enhanced measurement solutions</li>
+                      <li>Cross-retailer partnerships</li>
+                      <li>Innovation in ad formats</li>
+                    </ul>
+                  </div>
                 </div>
               </CardContent>
             </Card>
