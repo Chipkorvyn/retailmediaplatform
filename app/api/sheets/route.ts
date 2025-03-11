@@ -1,6 +1,5 @@
 import { google } from 'googleapis'
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
 
 // Cache duration in seconds (5 minutes)
 const CACHE_DURATION = 300
@@ -26,14 +25,13 @@ interface TabData {
   sectionData: SectionData[];
 }
 
-interface MarketData {
-  [key: string]: TabData;
+// Custom error type for better error handling
+interface GoogleSheetsError extends Error {
+  code?: number;
 }
 
 export async function GET() {
   try {
-    const headersList = headers()
-    
     // Initialize Google Sheets API client
     const auth = new google.auth.GoogleAuth({
       credentials: {
@@ -54,7 +52,7 @@ export async function GET() {
     }
 
     // Fetch data from all required sheets
-    const [tabsResponse, sectionsResponse, sectionDataResponse] = await Promise.all([
+    const [, sectionsResponse, sectionDataResponse] = await Promise.all([
       sheets.spreadsheets.values.get({
         spreadsheetId,
         range: 'Tabs!A2:E',
@@ -108,17 +106,19 @@ export async function GET() {
         'Cache-Control': `s-maxage=${CACHE_DURATION}, stale-while-revalidate`,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching data from Google Sheets:', error);
+    
+    const sheetsError = error as GoogleSheetsError;
     
     // Return more detailed error message
     return NextResponse.json(
       { 
         error: 'Failed to fetch data from Google Sheets',
-        details: error.message,
-        code: error.code || 500
+        details: sheetsError.message,
+        code: sheetsError.code || 500
       },
-      { status: error.code || 500 }
+      { status: sheetsError.code || 500 }
     );
   }
 } 

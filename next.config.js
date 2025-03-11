@@ -2,7 +2,6 @@
 const nextConfig = {
   // Enable static optimization where possible
   reactStrictMode: true,
-  swcMinify: true,
   
   // Handle environment variables
   env: {
