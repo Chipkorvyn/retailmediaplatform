@@ -21,9 +21,18 @@ interface SectionData {
   value: number;
 }
 
-interface SuccessResponse {
+interface GlobalString {
+  key: string;
+  value: string;
+}
+
+interface MarketResponse {
   sections: Section[];
   sectionData: SectionData[];
+}
+
+interface GlobalsResponse {
+  globalStrings: GlobalString[];
 }
 
 interface ErrorResponse {
@@ -32,8 +41,12 @@ interface ErrorResponse {
   code?: number;
 }
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
+    // Get the type parameter from the URL
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type') || 'market';
+
     // Initialize Google Sheets API client
     const auth = new google.auth.GoogleAuth({
       credentials: {
@@ -53,57 +66,80 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    // Fetch data from required sheets
-    const [sectionsResponse, sectionDataResponse] = await Promise.all([
-      sheets.spreadsheets.values.get({
+    if (type === 'globals') {
+      // Fetch global strings
+      const globalsResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: 'Sections!A2:G',
-      }),
-      sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: 'SectionData!A2:C',
-      }),
-    ]);
+        range: 'GlobalStrings!A2:B',
+      });
 
-    // Process sections
-    const sections = (sectionsResponse.data.values || []).map((row) => ({
-      tabName: row[1],
-      sectionName: row[3],
-      sectionId: row[0],
-      chartType: row[2],
-      description: row[4],
-      sortOrder: parseInt(row[5]) || 0,
-    }));
+      const globalStrings = (globalsResponse.data.values || []).map((row) => ({
+        key: row[0],
+        value: row[1],
+      }));
 
-    // Process section data
-    const sectionData = (sectionDataResponse.data.values || []).map((row) => ({
-      sectionId: row[0],
-      label: row[1],
-      value: parseFloat(row[2]),
-    }));
+      const response: GlobalsResponse = {
+        globalStrings,
+      };
 
-    // Filter sections for market tab and sort by order
-    const marketSections = sections
-      .filter(section => section.tabName === 'market')
-      .sort((a, b) => a.sortOrder - b.sortOrder);
+      return new NextResponse(JSON.stringify(response), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': `s-maxage=${CACHE_DURATION}, stale-while-revalidate`,
+        },
+      });
+    } else {
+      // Fetch market data
+      const [sectionsResponse, sectionDataResponse] = await Promise.all([
+        sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: 'Sections!A2:G',
+        }),
+        sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: 'SectionData!A2:C',
+        }),
+      ]);
 
-    // Get all section data for market tab sections
-    const marketSectionData = sectionData.filter(data => 
-      marketSections.some(section => section.sectionId === data.sectionId)
-    );
+      // Process sections
+      const sections = (sectionsResponse.data.values || []).map((row) => ({
+        tabName: row[1],
+        sectionName: row[3],
+        sectionId: row[0],
+        chartType: row[2],
+        description: row[4],
+        sortOrder: parseInt(row[5]) || 0,
+      }));
 
-    const successResponse: SuccessResponse = {
-      sections: marketSections,
-      sectionData: marketSectionData,
-    };
+      // Process section data
+      const sectionData = (sectionDataResponse.data.values || []).map((row) => ({
+        sectionId: row[0],
+        label: row[1],
+        value: parseFloat(row[2]),
+      }));
 
-    // Return response with cache headers
-    return new NextResponse(JSON.stringify(successResponse), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': `s-maxage=${CACHE_DURATION}, stale-while-revalidate`,
-      },
-    });
+      // Filter sections for market tab and sort by order
+      const marketSections = sections
+        .filter(section => section.tabName === 'market')
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+
+      // Get all section data for market tab sections
+      const marketSectionData = sectionData.filter(data => 
+        marketSections.some(section => section.sectionId === data.sectionId)
+      );
+
+      const response: MarketResponse = {
+        sections: marketSections,
+        sectionData: marketSectionData,
+      };
+
+      return new NextResponse(JSON.stringify(response), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': `s-maxage=${CACHE_DURATION}, stale-while-revalidate`,
+        },
+      });
+    }
   } catch (error) {
     console.error('Error fetching data from Google Sheets:', error);
     

@@ -14,6 +14,16 @@ import { BarChart, LineChart, PieChart, Pie, Cell, Bar, XAxis, YAxis, CartesianG
 import { Loader2 } from 'lucide-react';
 
 // Types for the API response
+interface GlobalString {
+  key: string;
+  value: string;
+}
+
+interface ApiResponse {
+  globalStrings: GlobalString[];
+  marketData?: MarketTabData; // Add this if the API returns both in one response
+}
+
 interface MarketSection {
   tabName: string;
   sectionName: string;
@@ -79,24 +89,85 @@ const retailerComparisonData = [
 const RetailMediaDashboard = () => {
   const [selectedChart, setSelectedChart] = React.useState('revenue');
 
+  // Fetch global strings from the API
+  const { data: globalStringsData, isLoading: isLoadingGlobal, error: globalError } = useQuery<ApiResponse>({
+    queryKey: ['globalStrings'],
+    queryFn: async () => {
+      console.log('Fetching global strings...');
+      const response = await fetch('/api/sheets?type=globals', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch data');
+      }
+      const data = await response.json();
+      console.log('Received global strings data:', data);
+      return data;
+    },
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 0
+  });
+
   // Fetch data from the API
-  const { data: marketData, isLoading, error } = useQuery<MarketTabData>({
+  const { data: marketData, isLoading: isLoadingMarket, error: marketError } = useQuery<MarketTabData>({
     queryKey: ['marketData'],
     queryFn: async () => {
-      const response = await fetch('/api/sheets');
+      console.log('Fetching market data...');
+      const response = await fetch('/api/sheets?type=market', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (!response.ok) {
         const errorData = await response.json();
         console.error('API Error:', errorData);
         throw new Error(errorData.error || 'Failed to fetch market data');
       }
       const data = await response.json();
-      console.log('Fetched market data:', data);
+      console.log('Received market data:', data);
       return data;
     },
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 0
   });
 
+  const getGlobalString = (key: string): string => {
+    console.log('Getting global string for key:', key);
+    console.log('Current globalStringsData:', globalStringsData);
+    
+    if (!globalStringsData) {
+      console.log('No globalStringsData available');
+      return 'Loading...';
+    }
+
+    if (!globalStringsData.globalStrings) {
+      console.warn('API response missing globalStrings array:', globalStringsData);
+      return 'Loading...';
+    }
+
+    const globalString = globalStringsData.globalStrings.find(str => str.key.trim() === key.trim());
+    console.log('Found global string:', globalString);
+    
+    if (!globalString) {
+      console.warn('No matching global string found for key:', key);
+      return 'Loading...';
+    }
+
+    console.log('Returning value:', globalString.value);
+    return globalString.value;
+  };
+
   // Loading state
-  if (isLoading) {
+  if (isLoadingMarket || isLoadingGlobal) {
+    console.log('Loading state - Global:', isLoadingGlobal, 'Market:', isLoadingMarket);
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -105,24 +176,32 @@ const RetailMediaDashboard = () => {
   }
 
   // Error state
-  if (error) {
+  if (globalError || marketError) {
+    console.error('Global error:', globalError);
+    console.error('Market error:', marketError);
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <p className="text-red-500 mb-2">Error loading data: {(error as Error).message}</p>
+          <p className="text-red-500 mb-2">Error loading data: {((globalError || marketError) as Error)?.message}</p>
           <p className="text-sm text-gray-600">Please check the browser console for more details.</p>
         </div>
       </div>
     );
   }
 
-  // Early return if data is not available
-  if (!marketData) {
-    console.log('No market data available');
-    return null;
-  }
+  const title = getGlobalString('GlobalTitle');
+  console.log('Final title to display:', title);
 
-  console.log('Rendering with market data:', marketData);
+  // Early return if market data is not available
+  if (!marketData?.sections) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500">Loading market data...</p>
+        </div>
+      </div>
+    );
+  }
 
   const getChartData = (sectionId: string): ChartDataPoint[] => {
     if (!marketData) return [];
@@ -140,8 +219,15 @@ const RetailMediaDashboard = () => {
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+      <div className="flex items-center justify-between space-y-2 mb-8">
+        <div>
+          <h2 className="text-4xl font-bold tracking-tight mb-2">
+            {getGlobalString('GlobalTitle')}
+          </h2>
+          <p className="text-xl text-gray-500">
+            {getGlobalString('GlobalSubtitle')}
+          </p>
+        </div>
       </div>
       <Tabs defaultValue="country-potential" className="space-y-4">
         <TabsList>
@@ -225,7 +311,7 @@ const RetailMediaDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {marketData.sections.map((section) => (
+                  {(marketData?.sections || []).map((section) => (
                     <button
                       key={section.sectionId}
                       onClick={() => setSelectedChart(section.sectionId)}
@@ -240,7 +326,7 @@ const RetailMediaDashboard = () => {
                   ))}
                 </div>
 
-                {marketData.sections.map((section) => (
+                {(marketData?.sections || []).map((section) => (
                   selectedChart === section.sectionId && (
                     <div key={section.sectionId}>
                       <div className="mb-4">
@@ -658,6 +744,12 @@ const RetailMediaDashboard = () => {
           </div>
         </TabsContent>
       </Tabs>
+      <div className="mt-8 border-t pt-8">
+        <div className="text-sm text-gray-500">
+          <p className="mb-2">{getGlobalString('GlobalDisclaimer')}</p>
+          <p>{getGlobalString('GlobalFooter')}</p>
+        </div>
+      </div>
     </div>
   );
 };
