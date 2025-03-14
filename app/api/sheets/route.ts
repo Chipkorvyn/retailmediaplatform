@@ -41,6 +41,19 @@ interface ErrorResponse {
   code?: number;
 }
 
+interface Tab {
+  tabId: string;
+  tabName: string;
+  tabTitle: string;
+  tabSubtitle: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+interface TabsResponse {
+  tabs: Tab[];
+}
+
 export async function GET(request: Request): Promise<NextResponse> {
   try {
     // Get the type parameter from the URL
@@ -66,7 +79,33 @@ export async function GET(request: Request): Promise<NextResponse> {
       return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    if (type === 'globals') {
+    if (type === 'tabs') {
+      // Fetch tabs data
+      const tabsResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'Tabs!A2:F',
+      });
+
+      const tabs = (tabsResponse.data.values || []).map((row) => ({
+        tabId: row[0],
+        tabName: row[1],
+        tabTitle: row[2],
+        tabSubtitle: row[3],
+        sortOrder: parseInt(row[4]) || 0,
+        isActive: row[5] === 'TRUE',
+      }));
+
+      const response: TabsResponse = {
+        tabs: tabs.sort((a, b) => a.sortOrder - b.sortOrder),
+      };
+
+      return new NextResponse(JSON.stringify(response), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': `s-maxage=${CACHE_DURATION}, stale-while-revalidate`,
+        },
+      });
+    } else if (type === 'globals') {
       // Fetch global strings
       const globalsResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,

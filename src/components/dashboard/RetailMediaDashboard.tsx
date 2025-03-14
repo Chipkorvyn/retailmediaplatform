@@ -47,6 +47,19 @@ interface ChartDataPoint {
   value: number;
 }
 
+interface Tab {
+  tabId: string;
+  tabName: string;
+  tabTitle: string;
+  tabSubtitle: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+interface TabsResponse {
+  tabs: Tab[];
+}
+
 // Mock data for other tabs
 const retailerPerformanceData = [
   { name: 'Amazon', rmPercent: 4.2 },
@@ -139,6 +152,30 @@ const RetailMediaDashboard = () => {
     staleTime: 0
   });
 
+  // Fetch tabs data
+  const { data: tabsData, isLoading: isLoadingTabs } = useQuery<TabsResponse>({
+    queryKey: ['tabsData'],
+    queryFn: async () => {
+      console.log('Fetching tabs data...');
+      const response = await fetch('/api/sheets?type=tabs', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch tabs data');
+      }
+      const data = await response.json();
+      console.log('Received tabs data:', data);
+      return data;
+    },
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 0
+  });
+
   const getGlobalString = (key: string): string => {
     console.log('Getting global string for key:', key);
     console.log('Current globalStringsData:', globalStringsData);
@@ -166,8 +203,8 @@ const RetailMediaDashboard = () => {
   };
 
   // Loading state
-  if (isLoadingMarket || isLoadingGlobal) {
-    console.log('Loading state - Global:', isLoadingGlobal, 'Market:', isLoadingMarket);
+  if (isLoadingMarket || isLoadingGlobal || isLoadingTabs) {
+    console.log('Loading state - Global:', isLoadingGlobal, 'Market:', isLoadingMarket, 'Tabs:', isLoadingTabs);
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -229,18 +266,15 @@ const RetailMediaDashboard = () => {
           </p>
         </div>
       </div>
-      <Tabs defaultValue="country-potential" className="space-y-4">
+      <Tabs defaultValue={tabsData?.tabs[0]?.tabId || "welcome"} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="welcome">Welcome</TabsTrigger>
-          <TabsTrigger value="country-potential">Country Potential</TabsTrigger>
-          <TabsTrigger value="best-in-class">Best in Class</TabsTrigger>
-          <TabsTrigger value="advertiser-categories">
-            Advertiser Categories
-          </TabsTrigger>
-          <TabsTrigger value="channel-breakdown">Channel Breakdown</TabsTrigger>
-          <TabsTrigger value="retailer-deep-dives">
-            Retailer Deep Dives
-          </TabsTrigger>
+          {tabsData?.tabs
+            .filter(tab => tab.isActive)
+            .map(tab => (
+              <TabsTrigger key={tab.tabId} value={tab.tabId}>
+                {tab.tabName}
+              </TabsTrigger>
+            ))}
         </TabsList>
 
         {/* Welcome Page */}
