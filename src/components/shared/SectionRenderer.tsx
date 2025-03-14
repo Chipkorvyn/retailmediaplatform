@@ -1,4 +1,4 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { BarChart } from "@/components/ui/bar-chart";
 import { DynamicSection, DynamicSectionData, Slide } from "@/types/dashboard";
 
@@ -6,9 +6,10 @@ interface SectionRendererProps {
   section: DynamicSection;
   slide: Slide;
   sectionData: DynamicSectionData[];
+  selectedMetric?: string;
 }
 
-export function SectionRenderer({ section, slide, sectionData }: SectionRendererProps) {
+export function SectionRenderer({ section, slide, sectionData, selectedMetric }: SectionRendererProps) {
   if (!sectionData || !Array.isArray(sectionData)) {
     console.error('Invalid or missing section data');
     return null;
@@ -16,18 +17,38 @@ export function SectionRenderer({ section, slide, sectionData }: SectionRenderer
 
   const sectionDataItems = sectionData
     .filter(item => item && item.sectionId === section.sectionId)
-    .sort((a, b) => {
-      if (!a?.key && !b?.key) return 0;
-      if (!a?.key) return 1;
-      if (!b?.key) return -1;
-      return a.key.localeCompare(b.key);
-    });
+    .sort((a, b) => a.originalRowIndex - b.originalRowIndex);
 
   switch (section.sectionType) {
     case 'chart': {
+      // Debug log
+      console.log('Chart section:', {
+        sectionId: section.sectionId,
+        slideId: section.slideId,
+        slideTitle: slide.slideTitle,
+        tabId: slide.tabId
+      });
+
       const introItem = sectionDataItems.find(item => item.key === 'intro');
-      const chartData = sectionDataItems
-        .filter(item => item.key !== 'intro')
+
+      // If we have a selected metric, filter data accordingly
+      let chartData = sectionDataItems;
+      if (selectedMetric) {
+        const allOverlayIndices = sectionDataItems
+          .map((item, index) => item.key === 'overlaylabel' ? index : -1)
+          .filter(index => index !== -1);
+
+        const currentMetricIndex = sectionDataItems.findIndex(
+          item => item.key === 'overlaylabel' && item.value === selectedMetric
+        );
+
+        const nextMetricIndex = allOverlayIndices.find(index => index > currentMetricIndex) || sectionDataItems.length;
+
+        chartData = sectionDataItems.slice(currentMetricIndex + 1, nextMetricIndex);
+      }
+
+      const finalChartData = chartData
+        .filter(item => item.key !== 'intro' && item.key !== 'overlaylabel')
         .map(item => ({
           name: item.key,
           value: parseFloat(item.value) || 0
@@ -37,13 +58,13 @@ export function SectionRenderer({ section, slide, sectionData }: SectionRenderer
       return (
         <div className="space-y-4">
           {introItem && (
-            <h3 className="text-lg font-semibold text-center">
+            <h3 className="text-base font-semibold mb-2 text-left">
               {introItem.value}
             </h3>
           )}
-          {chartData.length > 0 ? (
+          {finalChartData.length > 0 ? (
             <BarChart
-              data={chartData}
+              data={finalChartData}
               xAxisKey="name"
               yAxisKey="value"
               height={400}
@@ -53,10 +74,7 @@ export function SectionRenderer({ section, slide, sectionData }: SectionRenderer
           )}
           {slide.slideInsight && (
             <Card className="mt-4 bg-blue-50">
-              <CardHeader>
-                <CardTitle className="text-lg">Key Insight</CardTitle>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4">
                 <p>{slide.slideInsight}</p>
               </CardContent>
             </Card>

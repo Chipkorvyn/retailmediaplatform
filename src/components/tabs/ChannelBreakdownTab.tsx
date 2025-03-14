@@ -1,43 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart } from "@/components/ui/bar-chart";
+import { Slide, DynamicSection, TabComponentProps } from "@/types/dashboard";
 
-interface Slide {
-  slideId: string;
-  tabId: string;
-  slideTitle: string;
-  slideSubtitle: string;
-  slideInsight: string;
-  slideFooter: string;
-  sortOrder: number;
-  isActive: boolean;
-}
-
-interface DynamicSection {
-  sectionId: string;
-  slideId: string;
-  sectionType: string;
-  sectionTitle: string;
-  sortOrder: number;
-  isActive: boolean;
-}
-
-interface DynamicSectionData {
-  sectionId: string;
-  key: string;
-  value: string;
-}
-
-interface ChannelBreakdownTabProps {
-  slides: Slide[];
-  sections: DynamicSection[];
-  sectionData: DynamicSectionData[];
-  globalStrings: {
-    key: string;
-    value: string;
-  }[];
-}
-
-export function ChannelBreakdownTab({ slides, sections, sectionData }: ChannelBreakdownTabProps) {
+export function ChannelBreakdownTab({ slides, sections, sectionData }: TabComponentProps) {
   const channelBreakdownSlides = slides
     .filter(slide => slide.tabId === 'channel-breakdown' && slide.isActive)
     .sort((a, b) => a.sortOrder - b.sortOrder);

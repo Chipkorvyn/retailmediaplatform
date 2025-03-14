@@ -1,7 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SectionRenderer } from "@/components/shared/SectionRenderer";
 import { TabComponentProps } from "@/types/dashboard";
-import { DynamicSection, DynamicSectionData } from "@/types/dashboard";
+import { DynamicSectionData } from "@/types/dashboard";
 import { ReactNode } from "react";
 
 // Custom sort function for section data
@@ -23,50 +22,65 @@ const getSectionWrapper = (sectionId: string, sectionData: DynamicSectionData[])
   const introData = sectionData.find(item => item.key === 'intro');
   const title = introData?.value || '';
 
+  const DataSourcesWrapper = ({ children }: { children: ReactNode }) => (
+    <div className="rounded-lg bg-muted/50 p-6">
+      <h3 className="font-semibold mb-3">{title}</h3>
+      <ul className="space-y-2 list-disc pl-5">
+        {children}
+      </ul>
+    </div>
+  );
+  DataSourcesWrapper.displayName = 'DataSourcesWrapper';
+
+  const WarningWrapper = ({ children }: { children: ReactNode }) => (
+    <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-6">
+      <p className="text-amber-800 font-medium">{children}</p>
+    </div>
+  );
+  WarningWrapper.displayName = 'WarningWrapper';
+
+  const OverviewWrapper = ({ children }: { children: ReactNode }) => (
+    <Card className="bg-blue-50/50">
+      <CardHeader>
+        <CardTitle className="text-lg">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2 list-disc pl-5">
+          {children}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+  OverviewWrapper.displayName = 'OverviewWrapper';
+
+  const QuestionsWrapper = ({ children }: { children: ReactNode }) => (
+    <Card className="bg-green-50/50">
+      <CardHeader>
+        <CardTitle className="text-lg">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2 list-disc pl-5">
+          {children}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+  QuestionsWrapper.displayName = 'QuestionsWrapper';
+
+  const DefaultWrapper = ({ children }: { children: ReactNode }) => <div>{children}</div>;
+  DefaultWrapper.displayName = 'DefaultWrapper';
+
   switch (sectionId) {
     case 's1-slide1-welcome':
-      return ({ children }: { children: ReactNode }) => (
-        <div className="rounded-lg bg-muted/50 p-6">
-          <h3 className="font-semibold mb-3">{title}</h3>
-          <ul className="space-y-2 list-disc pl-5">
-            {children}
-          </ul>
-        </div>
-      );
+      return DataSourcesWrapper;
     case 's2-slide1-welcome':
-      return ({ children }: { children: ReactNode }) => (
-        <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-6">
-          <p className="text-amber-800 font-medium">{children}</p>
-        </div>
-      );
+      return WarningWrapper;
     case 's3-slide1-welcome':
-      return ({ children }: { children: ReactNode }) => (
-        <Card className="bg-blue-50/50">
-          <CardHeader>
-            <CardTitle className="text-lg">{title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 list-disc pl-5">
-              {children}
-            </ul>
-          </CardContent>
-        </Card>
-      );
+      return OverviewWrapper;
     case 's4-slide1-welcome':
-      return ({ children }: { children: ReactNode }) => (
-        <Card className="bg-green-50/50">
-          <CardHeader>
-            <CardTitle className="text-lg">{title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 list-disc pl-5">
-              {children}
-            </ul>
-          </CardContent>
-        </Card>
-      );
+      return QuestionsWrapper;
     default:
-      return ({ children }: { children: ReactNode }) => <div>{children}</div>;
+      return DefaultWrapper;
   }
 };
 

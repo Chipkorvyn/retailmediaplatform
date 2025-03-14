@@ -13,15 +13,16 @@ export interface DynamicSection {
   sectionId: string;
   slideId: string;
   sectionType: string;
-  sectionTitle: string;
   sortOrder: number;
   isActive: boolean;
+  sectionTitle: string;
 }
 
 export interface DynamicSectionData {
   sectionId: string;
   key: string;
   value: string;
+  originalRowIndex: number;
 }
 
 export interface GlobalString {
@@ -33,5 +34,5 @@ export interface TabComponentProps {
   slides: Slide[];
   sections: DynamicSection[];
   sectionData: DynamicSectionData[];
-  globalStrings: GlobalString[];
+  globalStrings?: GlobalString[];
 } 

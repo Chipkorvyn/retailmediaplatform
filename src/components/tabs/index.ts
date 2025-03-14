@@ -5,8 +5,9 @@ import { BestInClassTab } from './BestInClassTab';
 import { AdvertiserCategoriesTab } from './AdvertiserCategoriesTab';
 import { ChannelBreakdownTab } from './ChannelBreakdownTab';
 import { RetailerDeepDivesTab } from './RetailerDeepDivesTab';
+import { TabComponentProps } from '@/types/dashboard';
 
-export const TabComponents: Record<string, FC<any>> = {
+export const TabComponents: Record<string, FC<TabComponentProps>> = {
   welcome: WelcomeTab,
   'country-potential': CountryPotentialTab,
   'best-in-class': BestInClassTab,
