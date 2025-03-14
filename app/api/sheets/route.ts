@@ -54,6 +54,43 @@ interface TabsResponse {
   tabs: Tab[];
 }
 
+interface Slide {
+  slideId: string;
+  tabId: string;
+  slideTitle: string;
+  slideSubtitle: string;
+  slideInsight: string;
+  slideFooter: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+interface SlidesResponse {
+  slides: Slide[];
+}
+
+interface DynamicSection {
+  sectionId: string;
+  slideId: string;
+  sectionType: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+interface DynamicSectionsResponse {
+  sections: DynamicSection[];
+}
+
+interface DynamicSectionData {
+  sectionId: string;
+  key: string;
+  value: string;
+}
+
+interface DynamicSectionDataResponse {
+  sectionData: DynamicSectionData[];
+}
+
 export async function GET(request: Request): Promise<NextResponse> {
   try {
     // Get the type parameter from the URL
@@ -79,7 +116,93 @@ export async function GET(request: Request): Promise<NextResponse> {
       return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    if (type === 'tabs') {
+    if (type === 'sections') {
+      // Fetch sections data
+      const sectionsResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'Sections!A2:E',
+      });
+
+      const sections = (sectionsResponse.data.values || []).map((row) => ({
+        sectionId: row[0],
+        slideId: row[1],
+        sectionType: row[2],
+        sortOrder: parseInt(row[3]) || 0,
+        isActive: row[4] === 'TRUE',
+      }));
+
+      const response: DynamicSectionsResponse = {
+        sections: sections.sort((a, b) => a.sortOrder - b.sortOrder),
+      };
+
+      return new NextResponse(JSON.stringify(response), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': `s-maxage=${CACHE_DURATION}, stale-while-revalidate`,
+        },
+      });
+    } else if (type === 'sectionData') {
+      // Fetch section data
+      const sectionDataResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'SectionData!A2:C',
+      });
+
+      if (!sectionDataResponse.data.values) {
+        console.error('No section data found in spreadsheet');
+        return NextResponse.json({ sectionData: [] });
+      }
+
+      const sectionData = sectionDataResponse.data.values
+        .filter(row => row.length >= 3) // Ensure row has all required fields
+        .map((row) => ({
+          sectionId: row[0] || '',
+          key: row[1] || '',
+          value: row[2] || '',
+        }))
+        .filter(item => item.sectionId && item.key); // Filter out invalid entries
+
+      console.log('Processed section data:', sectionData);
+
+      const response: DynamicSectionDataResponse = {
+        sectionData,
+      };
+
+      return new NextResponse(JSON.stringify(response), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': `s-maxage=${CACHE_DURATION}, stale-while-revalidate`,
+        },
+      });
+    } else if (type === 'slides') {
+      // Fetch slides data
+      const slidesResponse = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: 'Slides!A2:H',
+      });
+
+      const slides = (slidesResponse.data.values || []).map((row) => ({
+        slideId: row[0],
+        tabId: row[1],
+        slideTitle: row[2],
+        slideSubtitle: row[3],
+        slideInsight: row[4],
+        slideFooter: row[5],
+        sortOrder: parseInt(row[6]) || 0,
+        isActive: row[7] === 'TRUE',
+      }));
+
+      const response: SlidesResponse = {
+        slides: slides.sort((a, b) => a.sortOrder - b.sortOrder),
+      };
+
+      return new NextResponse(JSON.stringify(response), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': `s-maxage=${CACHE_DURATION}, stale-while-revalidate`,
+        },
+      });
+    } else if (type === 'tabs') {
       // Fetch tabs data
       const tabsResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
@@ -110,21 +233,36 @@ export async function GET(request: Request): Promise<NextResponse> {
       const globalsResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range: 'GlobalStrings!A2:B',
+        // Add valueRenderOption to get raw values
+        valueRenderOption: 'UNFORMATTED_VALUE',
       });
 
-      const globalStrings = (globalsResponse.data.values || []).map((row) => ({
-        key: row[0],
-        value: row[1],
-      }));
+      if (!globalsResponse.data.values) {
+        console.error('No global strings found in spreadsheet');
+        return NextResponse.json({ globalStrings: [] });
+      }
+
+      const globalStrings = globalsResponse.data.values
+        .filter(row => row.length >= 2) // Ensure row has both key and value
+        .map((row) => ({
+          key: String(row[0] || '').trim(),
+          value: String(row[1] || '').trim(),
+        }))
+        .filter(item => item.key && item.value); // Filter out invalid entries
+
+      console.log('Processed global strings:', JSON.stringify(globalStrings, null, 2));
 
       const response: GlobalsResponse = {
         globalStrings,
       };
 
+      // Return with no-cache headers
       return new NextResponse(JSON.stringify(response), {
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': `s-maxage=${CACHE_DURATION}, stale-while-revalidate`,
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       });
     } else {
