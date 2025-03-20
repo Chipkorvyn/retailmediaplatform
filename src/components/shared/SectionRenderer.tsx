@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart } from "@/components/ui/bar-chart";
 import { DynamicSection, DynamicSectionData, Slide } from "@/types/dashboard";

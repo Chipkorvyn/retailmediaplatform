@@ -15,14 +15,22 @@ export function BarChart({ data, xAxisKey, yAxisKey, height = 400 }: BarChartPro
     <ResponsiveContainer width="100%" height={height}>
       <RechartsBarChart
         data={data}
-        layout="vertical"
-        margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
       >
-        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={true} />
-        <XAxis type="number" domain={[0, 5]} />
-        <YAxis dataKey={xAxisKey} type="category" width={90} />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis 
+          dataKey={xAxisKey}
+          axisLine={true}
+          tickLine={true}
+        />
+        <YAxis 
+          domain={[0, 180]}
+          ticks={[0, 45, 90, 135, 180]}
+          axisLine={true}
+          tickLine={true}
+        />
         <Tooltip />
-        <Bar dataKey={yAxisKey} fill="#8884d8" />
+        <Bar dataKey={yAxisKey} fill="#8884d8" radius={[4, 4, 0, 0]} maxBarSize={50} />
       </RechartsBarChart>
     </ResponsiveContainer>
   );
